@@ -1,11 +1,19 @@
 function divElementEnostavniTekst(sporocilo) {
   var jeSmesko = sporocilo.indexOf('http://sandbox.lavbic.net/teaching/OIS/gradivo/') > -1;
+  var jeSlika =  vsebujeLinkSlika(sporocilo);
+  if(jeSlika){
+    return $('<div style="font-weight: bold"></div>').html(sporocilo);
+  }
   if (jeSmesko) {
     sporocilo = sporocilo.replace(/\</g, '&lt;').replace(/\>/g, '&gt;').replace('&lt;img', '<img').replace('png\' /&gt;', 'png\' />');
     return $('<div style="font-weight: bold"></div>').html(sporocilo);
   } else {
     return $('<div style="font-weight: bold;"></div>').text(sporocilo);
   }
+}
+
+function vsebujeLinkSlika(sporocilo){
+  return sporocilo.match(/(https?:\/\/.*\.(?:png|jpg|gif))/gi) ? true : false;
 }
 
 function divElementHtmlTekst(sporocilo) {
@@ -24,6 +32,7 @@ function procesirajVnosUporabnika(klepetApp, socket) {
     }
   } else {
     sporocilo = filtirirajVulgarneBesede(sporocilo);
+    sporocilo = dodajSlike(sporocilo);
     klepetApp.posljiSporocilo(trenutniKanal, sporocilo);
     $('#sporocila').append(divElementEnostavniTekst(sporocilo));
     $('#sporocila').scrollTop($('#sporocila').prop('scrollHeight'));
@@ -136,4 +145,40 @@ function dodajSmeske(vhodnoBesedilo) {
       preslikovalnaTabela[smesko] + "' />");
   }
   return vhodnoBesedilo;
+}
+
+function dodajSlikeIzLinkov(vhodnoBesedilo) {
+  var besede = vhodnoBesedilo.split(' ');
+  var povezave = [];
+  var indeksiPovezav = [];
+  for(var i = 0; i < besede.length; i++){
+    if(besede[i].match(/(https?:\/\/.*\.(?:png|jpg|gif))/gmi)&&besede[i].indexOf('lavbic') == -1){
+      povezave.push(besede[i]);
+      indeksiPovezav.push(i);
+    }
+  }
+  for(var i = 0; i < povezave.length; i++){
+    povezave[i] = '<img src="' + povezave[i] + '" width="200" style="margin-left:20px">';
+    besede[indeksiPovezav[i]] = povezave[i];
+  }
+  for(var i = 0; i < besede.length; i++){
+    if(i == 0&&besede.length!=1){
+      vhodnoBesedilo = besede[i] + ' ';
+    } else if(i == besede.length - 1 && besede.length!==1){
+      vhodnoBesedilo += besede[i];
+    } else if(i == besede.length - 1 && besede.length == 1){
+      vhodnoBesedilo = besede[i]
+    } else {
+      vhodnoBesedilo += besede[i];
+    }
+  }
+  
+  return vhodnoBesedilo;
+}
+
+function dodajSlike(vhodnoBesedilo) {
+  var besedilo = vhodnoBesedilo;
+  vhodnoBesedilo = vhodnoBesedilo.replace(/([a-z\-_0-9\/\:\.]*\.(jpe?g|png|gif))/gi, "<img src='$1' width='200px' style='padding-left:20px;' />")
+  var vrni = besedilo + vhodnoBesedilo;
+  return vrni;
 }
